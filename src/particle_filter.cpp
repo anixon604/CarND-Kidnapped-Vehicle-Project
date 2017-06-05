@@ -92,10 +92,39 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 /**
 	* helper function that transforms the observations of MAP coordinates (particles and landmarks)
 	* to VEHICLE (observations)
+	* - Map coordinates will be translated by particle position
+	*	- Map coordinates will be rotated to partical heading angle
 	* @ param observations Vector of landmark observations
   */
-std::vector<LandmarkObs> transformCoords(Particle p, Map map_landmarks) {
+std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map map_landmarks) {
+
 	std::vector<LandmarkObs> predicted;
+
+	double partX = p.x;
+	double partY = p.y;
+	double partHeading = p.theta;
+	double landX, landY;
+
+	// if inverting from a map coord to a car relative. Then translation
+	// must be BEFORE rotation.
+	// (xfinal - carx)*cos(-heading) - (yfinal - cary)*sin(-heading)
+	// (xfinal - carx)*sin(-heading) + (yfinal - cary)*cos(-heading)
+	for(int i = 0; i < map_landmarks.landmark_list.size(); i++) {
+		Map::single_landmark_s landmark = map_landmarks.landmark_list[i];
+		landX = landmark.x_f;
+		landY = landmark.y_f;
+
+		LandmarkObs l;
+		l.id = landmark.id_i;
+		l.x = (landX-partX)*cos(-partHeading)-(landY-partY)*sin(-partHeading);
+		l.y = (landX-partX)*sin(-partHeading)+(landY-partY)*cos(-partHeading);
+
+		// TODO: implement sensor_range filter
+
+		predicted.push_back(l);
+	}
+
+
 	return predicted;
 }
 
@@ -132,7 +161,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	vector<LandmarkObs> predicted;
 
 	for(int i = 0; i < num_particles; i++) {
-			predicted = transformCoords(particles[i], map_landmarks);
+			predicted = transformCoords(sensor_range, particles[i], map_landmarks);
 			dataAssociation(predicted, observations);
 
 			// BEGIN calculate Multivariate_normal_distribution
@@ -157,9 +186,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			//			 at creation.
 			// observations were sorted by id in dataAssociation() using custom
 			// comparitor.
+			// - Will only process predicted landmarks that were matched to observations
 			for(int i = 0; i < observations.size(); i++) {
-				delta_x = predicted[i].x - observations[i].x;
-				delta_y = predicted[i].y - observations[i].y;
+				int landmark_id = observations[i].id;
+				delta_x = predicted[landmark_id-1].x - observations[i].x;
+				delta_y = predicted[landmark_id-1].y - observations[i].y;
 				ximu2 = delta_x*delta_x;
 				yimu2 = delta_y*delta_y;
 
