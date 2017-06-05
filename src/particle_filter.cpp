@@ -72,7 +72,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
 	default_random_engine gen;
 
-	for(particle& p : particles) {
+	for(Particle& p : particles) {
 		// add measurements
 		p.x = p.x + v_div_y * (sin(p.theta + y_mul_t) - sin(p.theta));
 		p.y = p.y + v_div_y * (cos(p.theta) - cos(p.theta + y_mul_t));
@@ -89,11 +89,29 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
 }
 
+/**
+	* helper function that transforms the observations of MAP coordinates (particles and landmarks)
+	* to VEHICLE (observations)
+	* @ param observations Vector of landmark observations
+  */
+std::vector<LandmarkObs> transformCoords(Particle p, Map map_landmarks) {
+	std::vector<LandmarkObs> predicted;
+	return predicted;
+}
+
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
 	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
+
+	// sort the observations by ID
+	struct {
+		bool operator()(LandmarkObs a, LandmarkObs b) {
+			return a.id < b.id;
+		}
+	} LandmarkCompare;
+	sort(observations.begin(), observations.end(), LandmarkCompare);
 
 }
 
@@ -109,6 +127,54 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+
+	// vector<LandmarkObs> predicted - a simulated observation of each landmark relative to the particle.
+	vector<LandmarkObs> predicted;
+
+	for(int i = 0; i < num_particles; i++) {
+			predicted = transformCoords(particles[i], map_landmarks);
+			dataAssociation(predicted, observations);
+
+			// BEGIN calculate Multivariate_normal_distribution
+			/* Covariance Matrix E:
+					| variance_x  0 |
+					| 0  variance_y |
+
+				 Inverse of Covariance Matrix E:
+				 1/[variance_x*variance_y] * | variance_y   0 |
+				 									 					 | 0   variance_x |
+			*/
+			double var_x = std_landmark[0]*std_landmark[0];
+			double var_y = std_landmark[1]*std_landmark[1];
+			double invCovX = 1/var_x;
+			double invCovY = 1/var_y;
+			double delta_x, delta_y, ximu2, yimu2;
+
+			double weight = 0;
+
+			// note: predicted is already sorted by id.
+			// 			 since it was generated from map_landmarks which was ordered
+			//			 at creation.
+			// observations were sorted by id in dataAssociation() using custom
+			// comparitor.
+			for(int i = 0; i < observations.size(); i++) {
+				delta_x = predicted[i].x - observations[i].x;
+				delta_y = predicted[i].y - observations[i].y;
+				ximu2 = delta_x*delta_x;
+				yimu2 = delta_y*delta_y;
+
+				double numerator = exp((-1/2)*(ximu2*invCovX + yimu2*invCovY));
+				// sqrt[|2PI*E|] = sqrt[determinant of 2PI * E]
+				double denominator = sqrt((1/(pow(2*M_PI, 2)))*invCovX*invCovY);
+
+				//END calculate Multivariate_normal_distribution
+
+				weight *= numerator/denominator;
+			}
+
+			particles[i].weight = weight; // assign new weight to particle.
+
+	}
 }
 
 void ParticleFilter::resample() {
