@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <iterator>
+#include <limits>
 
 #include "particle_filter.h"
 
@@ -119,9 +120,8 @@ std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map ma
 		l.x = (landX-partX)*cos(-partHeading)-(landY-partY)*sin(-partHeading);
 		l.y = (landX-partX)*sin(-partHeading)+(landY-partY)*cos(-partHeading);
 
-		// TODO: implement sensor_range filter
-
-		predicted.push_back(l);
+		// sensor_range filter
+		if(dist(0.0, 0.0, l.x, l.y) <= sensor_range) predicted.push_back(l);
 	}
 
 
@@ -133,6 +133,16 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
+
+	for(LandmarkObs& obsLandmark : observations) {
+		double minDistance = std::numeric_limits<double>::max();
+		double currDist = 0;
+
+		for(LandmarkObs predLandmark : predicted) {
+			currDist = dist(obsLandmark.x, obsLandmark.y, predLandmark.x, predLandmark.y);
+			if(currDist < minDistance) obsLandmark.id = predLandmark.id;
+		}
+	}
 
 	// sort the observations by ID
 	struct {
@@ -187,10 +197,19 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			// observations were sorted by id in dataAssociation() using custom
 			// comparitor.
 			// - Will only process predicted landmarks that were matched to observations
-			for(int i = 0; i < observations.size(); i++) {
-				int landmark_id = observations[i].id;
-				delta_x = predicted[landmark_id-1].x - observations[i].x;
-				delta_y = predicted[landmark_id-1].y - observations[i].y;
+			for(LandmarkObs obs : observations) {
+
+				// find associated prediction for calculations
+				LandmarkObs p;
+				for(LandmarkObs landmark : predicted) {
+					if(obs.id == landmark.id) {
+						p = landmark;
+						break;
+					}
+				}
+
+				delta_x = p.x - obs.x;
+				delta_y = p.y - obs.y;
 				ximu2 = delta_x*delta_x;
 				yimu2 = delta_y*delta_y;
 
