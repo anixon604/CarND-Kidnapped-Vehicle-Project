@@ -48,8 +48,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 		weights.push_back(p.weight);
 	}
 
-
-
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
 }
@@ -63,7 +61,6 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// xf = x0 + v/yaw_rate [sin(theta + yaw_rate(dt)) - sin(theta)]
 	// yf = y0 + v/yaw_rate [cos(theta) - cos(theta + yaw_rate(dt))]
 	// heading = theta + yaw_rate(dt)
-	cout << "prediction started" << endl;
 
 	double std_x = std_pos[0];
 	double std_y = std_pos[1];
@@ -88,7 +85,6 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		p.y = dist_y(gen);
 		p.theta = dist_theta(gen);
 	}
-	cout << "prediction completed" << endl;
 }
 
 /**
@@ -126,7 +122,7 @@ std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map ma
 		if(dist(0.0, 0.0, l.x, l.y) <= sensor_range) predicted.push_back(l);
 	}
 
-	cout << "transformCoords completed" << endl;
+	//cout << "transformCoords completed" << endl;
 	return predicted;
 }
 
@@ -142,7 +138,10 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 		for(LandmarkObs predLandmark : predicted) {
 			currDist = dist(obsLandmark.x, obsLandmark.y, predLandmark.x, predLandmark.y);
-			if(currDist < minDistance) obsLandmark.id = predLandmark.id;
+			if(currDist < minDistance) {
+				obsLandmark.id = predLandmark.id;
+				minDistance = currDist;
+			}
 		}
 	}
 
@@ -154,7 +153,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	} LandmarkCompare;
 	sort(observations.begin(), observations.end(), LandmarkCompare);
 
-	cout << "dataAssociation completed" << endl;
+	//cout << "dataAssociation completed" << endl;
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
@@ -230,7 +229,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			weights[i] = weight; // update weights vector
 
 	}
-	cout << "updateWeights completed" << endl;
+	//cout << "updateWeights completed" << endl;
 }
 
 void ParticleFilter::resample() {
@@ -255,7 +254,7 @@ void ParticleFilter::resample() {
 
 	particles = next_particles;
 
-	cout << "resample completed" << endl;
+	//cout << "resample completed" << endl;
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
