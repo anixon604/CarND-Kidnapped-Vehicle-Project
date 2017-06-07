@@ -97,7 +97,6 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	* @ param observations Vector of landmark observations
   */
 std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map map_landmarks) {
-	cout << "transformCoords started" << endl;
 
 	std::vector<LandmarkObs> predicted;
 
@@ -123,7 +122,7 @@ std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map ma
 		// sensor_range filter
 		if(dist(0.0, 0.0, l.x, l.y) <= sensor_range) predicted.push_back(l);
 	}
-	
+
 	return predicted;
 }
 
@@ -132,7 +131,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
-	cout << "dataAssociation started" << particles.size() << weights.size() << endl;
+
 	for(LandmarkObs& obsLandmark : observations) {
 		double minDistance = std::numeric_limits<double>::max();
 		double currDist = 0;
@@ -171,7 +170,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   http://planning.cs.uiuc.edu/node99.html
 
 	// vector<LandmarkObs> predicted - a simulated observation of each landmark relative to the particle.
-	cout << "updateWeights started" << particles.size() << weights.size() << endl;
+	//cout << "updateWeights started" << particles.size() << weights.size() << endl;
 	std::vector<LandmarkObs> predicted;
 
 	for(int i = 0; i < num_particles; i++) {
@@ -237,7 +236,6 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight.
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-	cout << "resample started" << particles.size() << weights.size() << endl;
 
 	std::default_random_engine gen;
 	gen.seed(824);
