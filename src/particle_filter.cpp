@@ -168,7 +168,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   http://planning.cs.uiuc.edu/node99.html
 
 	// vector<LandmarkObs> predicted - a simulated observation of each landmark relative to the particle.
-	vector<LandmarkObs> predicted;
+	std::vector<LandmarkObs> predicted;
 
 	for(int i = 0; i < num_particles; i++) {
 			predicted = transformCoords(sensor_range, particles[i], map_landmarks);
@@ -223,6 +223,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			}
 
 			particles[i].weight = weight; // assign new weight to particle.
+			weights[i] = weight; // update weights vector
 
 	}
 }
@@ -231,6 +232,19 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight.
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
+
+	std::default_random_engine gen;
+	gen.seed(824);
+
+	std::discrete_distribution<int> distribution(weights.begin(), weights.end());
+
+	std::vector<Particle> next_particles; 
+
+	for(int i=0; i < num_particles; i++) {
+		next_particles.push_back(particles[distribution(gen)]);
+	}
+
+	particles = next_particles;
 
 }
 
