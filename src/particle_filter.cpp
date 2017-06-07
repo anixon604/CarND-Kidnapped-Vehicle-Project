@@ -244,7 +244,6 @@ void ParticleFilter::resample() {
 
 	//std::vector<Particle> *next_particles = new std::vector<Particle>();
 
-	cout << particles.size() << " - " << weights.size() << endl;
 	std::vector<Particle> particleClone = particles;
 
 	for(int i=0; i < num_particles; i++) {
