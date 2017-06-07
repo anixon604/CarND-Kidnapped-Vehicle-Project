@@ -24,7 +24,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
-	num_particles = 1000;
+	num_particles = 10;
 
 	double std_x = std[0];
 	double std_y = std[1];
@@ -63,6 +63,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// xf = x0 + v/yaw_rate [sin(theta + yaw_rate(dt)) - sin(theta)]
 	// yf = y0 + v/yaw_rate [cos(theta) - cos(theta + yaw_rate(dt))]
 	// heading = theta + yaw_rate(dt)
+	cout << "prediction started" << endl;
 
 	double std_x = std_pos[0];
 	double std_y = std_pos[1];
@@ -87,7 +88,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		p.y = dist_y(gen);
 		p.theta = dist_theta(gen);
 	}
-
+	cout << "prediction completed" << endl;
 }
 
 /**
@@ -98,6 +99,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	* @ param observations Vector of landmark observations
   */
 std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map map_landmarks) {
+	cout << "transformCoords started" << endl;
 
 	std::vector<LandmarkObs> predicted;
 
@@ -124,7 +126,7 @@ std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map ma
 		if(dist(0.0, 0.0, l.x, l.y) <= sensor_range) predicted.push_back(l);
 	}
 
-
+	cout << "transformCoords completed" << endl;
 	return predicted;
 }
 
@@ -133,7 +135,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
-
+	cout << "dataAssociation started" << endl;
 	for(LandmarkObs& obsLandmark : observations) {
 		double minDistance = std::numeric_limits<double>::max();
 		double currDist = 0;
@@ -152,6 +154,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	} LandmarkCompare;
 	sort(observations.begin(), observations.end(), LandmarkCompare);
 
+	cout << "dataAssociation completed" << endl;
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
@@ -168,6 +171,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   http://planning.cs.uiuc.edu/node99.html
 
 	// vector<LandmarkObs> predicted - a simulated observation of each landmark relative to the particle.
+	cout << "updateWeights started" << endl;
 	std::vector<LandmarkObs> predicted;
 
 	for(int i = 0; i < num_particles; i++) {
@@ -226,26 +230,32 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			weights[i] = weight; // update weights vector
 
 	}
+	cout << "updateWeights completed" << endl;
 }
 
 void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight.
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
+	cout << "resample started" << endl;
 
 	std::default_random_engine gen;
 	gen.seed(824);
 
 	std::discrete_distribution<int> distribution(weights.begin(), weights.end());
 
-	std::vector<Particle> next_particles; 
+	std::vector<Particle> next_particles;
+
+	cout << particles.size() << " - " << weights.size() << endl;
 
 	for(int i=0; i < num_particles; i++) {
+		//cout << i << endl;
 		next_particles.push_back(particles[distribution(gen)]);
 	}
 
 	particles = next_particles;
 
+	cout << "resample completed" << endl;
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
