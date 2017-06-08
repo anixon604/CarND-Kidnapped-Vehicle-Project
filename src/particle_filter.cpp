@@ -24,7 +24,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
-	num_particles = 10;
+	num_particles = 100;
 
 	double std_x = std[0];
 	double std_y = std[1];
@@ -132,7 +132,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
-	for(LandmarkObs l : predicted) cout << l.x << " " << l.y << endl;
+	//for(LandmarkObs l : predicted) cout << l.x << " " << l.y << endl;
 
 	for(LandmarkObs& obsLandmark : observations) {
 		double minDistance = std::numeric_limits<double>::max();
@@ -141,7 +141,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 		for(LandmarkObs predLandmark : predicted) {
 			currDist = dist(obsLandmark.x, obsLandmark.y, predLandmark.x, predLandmark.y);
 			if(currDist < minDistance) {
-				cout <<  "Distance " << minDistance << " " << obsLandmark.id << " " << predLandmark.id << " ID" << endl;
+				//cout <<  "Distance " << minDistance << " " << obsLandmark.id << " " << predLandmark.id << " ID" << endl;
 				obsLandmark.id = predLandmark.id;
 				minDistance = currDist;
 			}
@@ -195,7 +195,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			double invCovY = 1/var_y;
 			double delta_x, delta_y, ximu2, yimu2;
 
-			double weight = 0;
+			double weight = 0.0;
 
 			// note: predicted is already sorted by id.
 			// 			 since it was generated from map_landmarks which was ordered
@@ -214,23 +214,25 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 					}
 				}
 
-				delta_x = p.x - obs.x;
-				delta_y = p.y - obs.y;
+				delta_x = obs.x - p.x;
+				delta_y = obs.y - p.y;
 				ximu2 = delta_x*delta_x;
 				yimu2 = delta_y*delta_y;
 
 				double numerator = exp((-1/2)*(ximu2*invCovX + yimu2*invCovY));
 				// sqrt[|2PI*E|] = sqrt[determinant of 2PI * E]
-				double denominator = sqrt((1/(pow(2*M_PI, 2)))*invCovX*invCovY);
+				double denominator = sqrt(1/((2*M_PI*invCovX)*(2*M_PI*invCovY)));
 
 				//END calculate Multivariate_normal_distribution
 
 				weight *= numerator/denominator;
-				cout << numerator << " " << denominator << endl;
+				cout << "ximu2 " << ximu2 << " yimu2 " << yimu2 << endl;
+				cout << numerator << " " << denominator <<  " " << weight << endl;
 			}
 
 			particles[i].weight = weight; // assign new weight to particle.
 			weights[i] = weight; // update weights vector
+			cout << "update weight at " << i << " with " << weights[i] << endl;
 
 	}
 	//cout << "updateWeights completed" << endl;
@@ -247,6 +249,9 @@ void ParticleFilter::resample() {
 	std::discrete_distribution<int> distribution(weights.begin(), weights.end());
 
 	//std::vector<Particle> *next_particles = new std::vector<Particle>();
+	// for(double w : weights) {
+	// 	cout << w << " weight" << endl;
+	// }
 
 	std::vector<Particle> newer_part;
 	newer_part.resize(num_particles);
