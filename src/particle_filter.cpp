@@ -195,7 +195,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			double invCovY = 1/var_y;
 			double delta_x, delta_y, ximu2, yimu2;
 
-			double weight = 0.0;
+			double weight = 1.0;
 
 			// note: predicted is already sorted by id.
 			// 			 since it was generated from map_landmarks which was ordered
@@ -219,15 +219,28 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 				ximu2 = delta_x*delta_x;
 				yimu2 = delta_y*delta_y;
 
-				double numerator = exp((-1/2)*(ximu2*invCovX + yimu2*invCovY));
+				weight *= exp((-1/2)*(ximu2*invCovX + yimu2*invCovY))
+													*(1/(2*M_PI*delta_x*delta_y));
 				// sqrt[|2PI*E|] = sqrt[determinant of 2PI * E]
-				double denominator = sqrt(1/((2*M_PI*invCovX)*(2*M_PI*invCovY)));
+				//float denominator = sqrt(1/((2*M_PI*invCovX)*(2*M_PI*invCovY)));
 
 				//END calculate Multivariate_normal_distribution
 
-				weight *= numerator/denominator;
-				cout << "ximu2 " << ximu2 << " yimu2 " << yimu2 << endl;
-				cout << numerator << " " << denominator <<  " " << weight << endl;
+				//weight *= numerator/denominator;
+
+				cout << "\nVar x " << var_x << endl;
+				cout << "Var y " << var_y << endl;
+				cout << "invCovX " << invCovX << endl;
+				cout << "invCovY " << invCovY << endl;
+				cout << "delta_x " << delta_x << endl;
+				cout << "delta_y " << delta_y << endl;
+				cout << "ximu2 " << ximu2 << endl;
+				cout << "yimu2 " << yimu2 << endl;
+				//cout << "numerator " << numerator << endl;
+				//cout << "denominator " << denominator << endl;
+				cout << "weight " << weight << "\n" << endl;
+				//cout << "ximu2 " << ximu2 << " yimu2 " << yimu2 << endl;
+				//cout << numerator << " " << denominator <<  " " << weight << endl;
 			}
 
 			particles[i].weight = weight; // assign new weight to particle.
