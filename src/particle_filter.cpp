@@ -24,7 +24,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
-	num_particles = 200;
+	num_particles = 10;
 
 	double std_x = std[0];
 	double std_y = std[1];
@@ -120,7 +120,7 @@ std::vector<LandmarkObs> transformCoords(double sensor_range, Particle p, Map ma
 		l.y = (landX-partX)*sin(-partHeading)+(landY-partY)*cos(-partHeading);
 
 		// sensor_range filter
-		if(dist(0.0, 0.0, l.x, l.y) <= sensor_range) predicted.push_back(l);
+		if(dist(partX, partY, l.x, l.y) <= sensor_range) predicted.push_back(l);
 	}
 
 	return predicted;
@@ -132,6 +132,8 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
+	for(LandmarkObs l : predicted) cout << l.x << " " << l.y << endl;
+
 	for(LandmarkObs& obsLandmark : observations) {
 		double minDistance = std::numeric_limits<double>::max();
 		double currDist = 0;
@@ -139,6 +141,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 		for(LandmarkObs predLandmark : predicted) {
 			currDist = dist(obsLandmark.x, obsLandmark.y, predLandmark.x, predLandmark.y);
 			if(currDist < minDistance) {
+				cout <<  "Distance " << minDistance << " " << obsLandmark.id << " " << predLandmark.id << " ID" << endl;
 				obsLandmark.id = predLandmark.id;
 				minDistance = currDist;
 			}
@@ -223,6 +226,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 				//END calculate Multivariate_normal_distribution
 
 				weight *= numerator/denominator;
+				cout << numerator << " " << denominator << endl;
 			}
 
 			particles[i].weight = weight; // assign new weight to particle.
@@ -244,14 +248,15 @@ void ParticleFilter::resample() {
 
 	//std::vector<Particle> *next_particles = new std::vector<Particle>();
 
-	std::vector<Particle> particleClone = particles;
+	std::vector<Particle> newer_part;
+	newer_part.resize(num_particles);
 
 	for(int i=0; i < num_particles; i++) {
 		//cout << i << endl;
-		particles[i] = particleClone[distribution(gen)];
+		newer_part[i] = particles[distribution(gen)];
 	}
 
-	//cout << "resample completed" << endl;
+	particles = newer_part;
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
