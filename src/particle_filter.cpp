@@ -24,7 +24,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
-	num_particles = 100;
+	num_particles = 300;
 
 	double std_x = std[0];
 	double std_y = std[1];
@@ -69,23 +69,29 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	double std_theta = std_pos[2];
 
 	double v_div_y = velocity / yaw_rate;
+
 	double y_mul_t = yaw_rate * delta_t;
 
 	default_random_engine gen;
 
 	for(Particle& p : particles) {
 		// add measurements
-		p.x = p.x + v_div_y * (sin(p.theta + y_mul_t) - sin(p.theta));
-		p.y = p.y + v_div_y * (cos(p.theta) - cos(p.theta + y_mul_t));
-		p.theta = p.theta + y_mul_t;
+		if(fabs(yaw_rate < 0.000001)) {
+			p.x = p.x + velocity * delta_t * cos(p.theta);
+			p.y = p.y + velocity * delta_t * sin(p.theta);
+		} else {
+			p.x = p.x + v_div_y * (sin(p.theta + y_mul_t) - sin(p.theta));
+			p.y = p.y + v_div_y * (cos(p.theta) - cos(p.theta + y_mul_t));
+			p.theta = p.theta + y_mul_t;
+		}
 
-		normal_distribution<double> dist_x(p.x, std_x);
-		normal_distribution<double> dist_y(p.y, std_y);
-		normal_distribution<double> dist_theta(p.theta, std_theta);
+		normal_distribution<double> dist_x(0, std_x);
+		normal_distribution<double> dist_y(0, std_y);
+		normal_distribution<double> dist_theta(0, std_theta);
 
-		p.x = dist_x(gen);
-		p.y = dist_y(gen);
-		p.theta = dist_theta(gen);
+		p.x += dist_x(gen);
+		p.y += dist_y(gen);
+		p.theta += dist_theta(gen);
 	}
 }
 
@@ -228,24 +234,24 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 				//weight *= numerator/denominator;
 
-				cout << "\nVar x " << var_x << endl;
-				cout << "Var y " << var_y << endl;
-				cout << "invCovX " << invCovX << endl;
-				cout << "invCovY " << invCovY << endl;
-				cout << "delta_x " << delta_x << endl;
-				cout << "delta_y " << delta_y << endl;
-				cout << "ximu2 " << ximu2 << endl;
-				cout << "yimu2 " << yimu2 << endl;
-				//cout << "numerator " << numerator << endl;
-				//cout << "denominator " << denominator << endl;
-				cout << "weight " << weight << "\n" << endl;
-				//cout << "ximu2 " << ximu2 << " yimu2 " << yimu2 << endl;
-				//cout << numerator << " " << denominator <<  " " << weight << endl;
+				// cout << "\nVar x " << var_x << endl;
+				// cout << "Var y " << var_y << endl;
+				// cout << "invCovX " << invCovX << endl;
+				// cout << "invCovY " << invCovY << endl;
+				// cout << "delta_x " << delta_x << endl;
+				// cout << "delta_y " << delta_y << endl;
+				// cout << "ximu2 " << ximu2 << endl;
+				// cout << "yimu2 " << yimu2 << endl;
+				// //cout << "numerator " << numerator << endl;
+				// //cout << "denominator " << denominator << endl;
+				// cout << "weight " << weight << "\n" << endl;
+				// //cout << "ximu2 " << ximu2 << " yimu2 " << yimu2 << endl;
+				// //cout << numerator << " " << denominator <<  " " << weight << endl;
 			}
 
 			particles[i].weight = weight; // assign new weight to particle.
 			weights[i] = weight; // update weights vector
-			cout << "update weight at " << i << " with " << weights[i] << endl;
+			//cout << "update weight at " << i << " with " << weights[i] << endl;
 
 	}
 	//cout << "updateWeights completed" << endl;
